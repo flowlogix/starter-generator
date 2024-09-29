@@ -18,14 +18,22 @@
  */
 package com.flowlogix.starter;
 
-import org.junit.jupiter.api.Test;
-import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
-import static org.assertj.core.api.Assertions.assertThat;
+import java.io.OutputStream;
+import java.io.IOException;
 
-class ArchetypeRunnerIT {
-    @Test
-    void generateArchetype() {
-        ReturnValue result = new ArchetypeGenerator().generate();
-        assertThat(result.status()).withFailMessage(result.output()).isZero();
+class NullOutputStream extends OutputStream {
+    @Override
+    public void write(int b) throws IOException {
+        // Do nothing
+    }
+
+    @Override
+    public void write(byte[] b) throws IOException {
+        // Do nothing
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        // Do nothing
     }
 }

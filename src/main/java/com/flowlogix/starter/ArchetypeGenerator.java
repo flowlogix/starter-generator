@@ -20,17 +20,24 @@ package com.flowlogix.starter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.cli.MavenCli;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 @Slf4j
 public class ArchetypeGenerator {
-    public int generate() {
+    public record ReturnValue(int status, String output) { }
+
+    public ReturnValue generate() {
         MavenCli cli = new MavenCli();
         String projectDirectory = "/tmp/project";
         System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
-        return cli.doMain(new String[] { "archetype:generate", "-DarchetypeGroupId=com.flowlogix.archetypes",
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        return new ReturnValue(cli.doMain(new String[] { "archetype:generate", "-DarchetypeGroupId=com.flowlogix.archetypes",
                 "-DarchetypeArtifactId=starter", "-DarchetypeVersion=LATEST", "-DgroupId=com.flowlogix",
                 "-DartifactId=sample", "-Dversion=1.x-SNAPSHOT", "-DbaseType=payara", "-Dpackage=com.flowlogix.example",
                 "-DinteractiveMode=false" },
-                projectDirectory, System.out, System.err);
+                projectDirectory, new PrintStream(new NullOutputStream()), new PrintStream(new BufferedOutputStream(out))),
+                out.toString());
     }
 }
