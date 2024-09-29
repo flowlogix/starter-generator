@@ -1,0 +1,118 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.flowlogix.starter</groupId>
+    <artifactId>starter-generator</artifactId>
+    <version>1.x-SNAPSHOT</version>
+
+    <name>Starter Generator Project</name>
+
+    <parent>
+        <groupId>com.flowlogix</groupId>
+        <artifactId>infra-pom</artifactId>
+        <version>33</version>
+    </parent>
+
+    <properties>
+        <flowlogix.depchain.version>36</flowlogix.depchain.version>
+        <checkstyle.supressionsLocation>${basedir}/src/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
+        <checkstyle.headerLocation>${basedir}/src/checkstyle/apache-header.txt</checkstyle.headerLocation>
+        <maven.build.cache.enabled>true</maven.build.cache.enabled>
+        <test.redirect.to.file>false</test.redirect.to.file>
+        <enforcer.fail>false</enforcer.fail>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.flowlogix.depchain</groupId>
+            <artifactId>unit-test</artifactId>
+            <version>${flowlogix.depchain.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-embedder</artifactId>
+            <version>3.9.9</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.maven</groupId>
+                    <artifactId>maven-slf4j-provider</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.eclipse.sisu</groupId>-->
+<!--            <artifactId>org.eclipse.sisu.inject</artifactId>-->
+<!--            <version>0.3.5</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.eclipse.sisu</groupId>-->
+<!--            <artifactId>org.eclipse.sisu.plexus</artifactId>-->
+<!--            <version>0.3.5</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-compat</artifactId>
+            <version>3.9.9</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.google.inject</groupId>-->
+<!--            <artifactId>guice</artifactId>-->
+<!--            <version>6.0.0</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-connector-basic</artifactId>
+            <version>1.9.22</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-transport-http</artifactId>
+            <version>1.9.22</version>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>2.0.16</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+<!--            <dependency>-->
+<!--                <groupId>org.codehaus.plexus</groupId>-->
+<!--                <artifactId>plexus-xml</artifactId>-->
+<!--                <version>4.0.4</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.apache.maven</groupId>-->
+<!--                <artifactId>maven-xml-impl</artifactId>-->
+<!--                <version>4.0.0-beta-4</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.codehaus.plexus</groupId>-->
+<!--                <artifactId>plexus-utils</artifactId>-->
+<!--                <version>3.5.1</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.codehaus.plexus</groupId>-->
+<!--                <artifactId>plexus-classworlds</artifactId>-->
+<!--                <version>2.8.0</version>-->
+<!--            </dependency>-->
+        </dependencies>
+    </dependencyManagement>
+</project>

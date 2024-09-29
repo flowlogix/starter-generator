@@ -1,0 +1,3 @@
+= README
+
+Starter-generator sample project
