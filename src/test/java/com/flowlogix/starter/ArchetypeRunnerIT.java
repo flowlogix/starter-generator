@@ -18,6 +18,11 @@
  */
 package com.flowlogix.starter;
 
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -25,7 +30,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +46,22 @@ class ArchetypeRunnerIT {
 
     @SneakyThrows(IOException.class)
     static void createZipFileFromOutputStream(byte[] zipBytes, String zipFilePath) {
-        Files.copy(new BufferedInputStream(new ByteArrayInputStream(zipBytes)), Path.of(zipFilePath),
+        Files.copy(new BufferedInputStream(new ByteArrayInputStream(zipBytes)),
+                java.nio.file.Path.of(zipFilePath),
                 StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @GET
+    @Path("/download")
+    @Produces("application/octet-stream")
+    public Response downloadFile(String fileName, byte[] fileContent) {
+        StreamingOutput stream = output -> {
+            output.write(fileContent);
+            output.flush();
+        };
+
+        return Response.ok(stream)
+                .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(fileName))
+                .build();
     }
 }
