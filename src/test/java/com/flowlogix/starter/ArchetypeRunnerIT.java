@@ -18,14 +18,17 @@
  */
 package com.flowlogix.starter;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 class ArchetypeRunnerIT {
     @Test
     void generateArchetype() {
         ReturnValue result = new ArchetypeGenerator().generate();
         assertThat(result.status()).withFailMessage(result.output()).isZero();
+        log.debug("Generated project: {}", result.output());
     }
 }

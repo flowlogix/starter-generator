@@ -18,26 +18,53 @@
  */
 package com.flowlogix.starter;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.maven.cli.MavenCli;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 
 @Slf4j
 public class ArchetypeGenerator {
     public record ReturnValue(int status, String output) { }
 
+    @SneakyThrows(IOException.class)
     public ReturnValue generate() {
         MavenCli cli = new MavenCli();
-        String projectDirectory = "/tmp/project";
-        System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        return new ReturnValue(cli.doMain(new String[] { "archetype:generate", "-DarchetypeGroupId=com.flowlogix.archetypes",
-                "-DarchetypeArtifactId=starter", "-DarchetypeVersion=LATEST", "-DgroupId=com.flowlogix",
-                "-DartifactId=sample", "-Dversion=1.x-SNAPSHOT", "-DbaseType=payara", "-Dpackage=com.flowlogix.example",
-                "-DinteractiveMode=false" },
-                projectDirectory, new PrintStream(new NullOutputStream()), new PrintStream(new BufferedOutputStream(out))),
-                out.toString());
+        Path temporaryPath = getTemporaryPath();
+        try {
+            String projectDirectory = temporaryPath.toString();
+            System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            return new ReturnValue(cli.doMain(new String[] { "archetype:generate",
+                            "-DarchetypeGroupId=com.flowlogix.archetypes",
+                            "-DarchetypeArtifactId=starter", "-DarchetypeVersion=LATEST",
+                            "-DgroupId=com.flowlogix", "-DartifactId=sample", "-Dversion=1.x-SNAPSHOT",
+                            "-DbaseType=payara", "-Dpackage=com.flowlogix.example",
+                            "-DinteractiveMode=false"},
+                    projectDirectory, new PrintStream(new NullOutputStream()), new PrintStream(new BufferedOutputStream(out))),
+                    out.toString());
+        } finally {
+            try (var paths = Files.walk(temporaryPath)) {
+                paths.sorted(Comparator.reverseOrder()).forEach(ArchetypeGenerator::deleteFile);
+            }
+        }
+    }
+
+    private Path getTemporaryPath() throws IOException {
+        Path path =  Files.createTempDirectory("starter-generator-project-");
+        path.resolve(".mvn").toFile().mkdirs();
+        log.debug("Created temporary project directory: {}", path);
+        return path;
+    }
+
+    @SneakyThrows(IOException.class)
+    private static void deleteFile(Path path) {
+        Files.delete(path);
     }
 }
