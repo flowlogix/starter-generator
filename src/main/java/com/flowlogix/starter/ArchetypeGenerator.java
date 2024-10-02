@@ -20,10 +20,13 @@ package com.flowlogix.starter;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.maven.cli.MavenCli;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,10 +35,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import static java.util.function.Predicate.not;
 
 @Slf4j
 public class ArchetypeGenerator {
-    public record ReturnValue(int status, String output) { }
+    public record ReturnValue(int status, String output, byte[] zipBytes) { }
 
     @SneakyThrows(IOException.class)
     public ReturnValue generate() {
@@ -53,17 +57,19 @@ public class ArchetypeGenerator {
 
         MavenCli cli = new MavenCli();
         Path temporaryPath = getTemporaryPath();
-        try (var out = new ByteArrayOutputStream()) {
+        try (var out = new ByteArrayOutputStream();
+             var zipFileStream = new ByteArrayOutputStream()) {
             String projectDirectory = temporaryPath.toString();
             System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
             List<String> options = Stream.concat(Stream.of("archetype:generate"),
                     parameters.entrySet().stream().map(entry -> "-D%s=%s"
                             .formatted(entry.getKey(), entry.getValue()))).toList();
             log.debug("Options: {}", options);
-            return new ReturnValue(cli.doMain(options.toArray(String[]::new),
+            int statusCode = cli.doMain(options.toArray(String[]::new),
                     projectDirectory, new PrintStream(new NullOutputStream()),
-                    new PrintStream(new BufferedOutputStream(out))),
-                    out.toString());
+                    new PrintStream(new BufferedOutputStream(out)));
+            createZipFileStream(temporaryPath, new BufferedOutputStream(zipFileStream));
+            return new ReturnValue(statusCode, out.toString(), zipFileStream.toByteArray());
         } finally {
             try (var paths = Files.walk(temporaryPath)) {
                 paths.sorted(Comparator.reverseOrder()).forEach(ArchetypeGenerator::deleteFile);
@@ -83,5 +89,25 @@ public class ArchetypeGenerator {
     @SneakyThrows(IOException.class)
     private static void deleteFile(Path path) {
         Files.delete(path);
+    }
+
+    private void createZipFileStream(Path sourceDirPath, OutputStream outputStream) throws IOException {
+        try (var zipOutputStream = new ZipArchiveOutputStream(outputStream);
+             var sourceDirPaths = Files.walk(sourceDirPath)) {
+            sourceDirPaths.filter(not(Files::isDirectory))
+                    .forEach(path -> addZipEntry(sourceDirPath, path, zipOutputStream));
+        }
+    }
+
+    @SneakyThrows(IOException.class)
+    @SuppressWarnings({"checkstyle:IllegalTokenText", "checkstyle:MagicNumber"})
+    private static void addZipEntry(Path sourceDirPath, Path path, ZipArchiveOutputStream zipOutputStream) {
+        ZipArchiveEntry zipEntry = new ZipArchiveEntry(sourceDirPath.relativize(path).toString());
+        if (Files.isExecutable(path)) {
+            zipEntry.setUnixMode(0755);
+        }
+        zipOutputStream.putArchiveEntry(zipEntry);
+        Files.copy(path, zipOutputStream);
+        zipOutputStream.closeArchiveEntry();
     }
 }

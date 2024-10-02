@@ -18,8 +18,15 @@
  */
 package com.flowlogix.starter;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,5 +37,12 @@ class ArchetypeRunnerIT {
         ReturnValue result = new ArchetypeGenerator().generate();
         assertThat(result.status()).withFailMessage(result.output()).isZero();
         log.debug("Generated project: {}", result.output());
+        createZipFileFromOutputStream(result.zipBytes(), "target/starter.zip");
+    }
+
+    @SneakyThrows(IOException.class)
+    static void createZipFileFromOutputStream(byte[] zipBytes, String zipFilePath) {
+        Files.copy(new BufferedInputStream(new ByteArrayInputStream(zipBytes)), Path.of(zipFilePath),
+                StandardCopyOption.REPLACE_EXISTING);
     }
 }

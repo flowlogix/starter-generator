@@ -78,6 +78,12 @@
             <artifactId>maven-resolver-transport-http</artifactId>
             <version>1.9.22</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-compress</artifactId>
+            <version>1.27.1</version>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
