@@ -28,6 +28,10 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Slf4j
 public class ArchetypeGenerator {
@@ -35,19 +39,30 @@ public class ArchetypeGenerator {
 
     @SneakyThrows(IOException.class)
     public ReturnValue generate() {
+        Map<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("archetypeGroupId", "com.flowlogix.archetypes");
+        parameters.put("archetypeArtifactId", "starter");
+        parameters.put("archetypeVersion", "LATEST");
+        parameters.put("interactiveMode", "false");
+
+        parameters.put("groupId", "com.example");
+        parameters.put("artifactId", "starter");
+        parameters.put("package", "com.example");
+        parameters.put("version", "1.x-SNAPSHOT");
+        parameters.put("baseType", "payara");
+
         MavenCli cli = new MavenCli();
         Path temporaryPath = getTemporaryPath();
-        try {
+        try (var out = new ByteArrayOutputStream()) {
             String projectDirectory = temporaryPath.toString();
             System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            return new ReturnValue(cli.doMain(new String[] { "archetype:generate",
-                            "-DarchetypeGroupId=com.flowlogix.archetypes",
-                            "-DarchetypeArtifactId=starter", "-DarchetypeVersion=LATEST",
-                            "-DgroupId=com.flowlogix", "-DartifactId=sample", "-Dversion=1.x-SNAPSHOT",
-                            "-DbaseType=payara", "-Dpackage=com.flowlogix.example",
-                            "-DinteractiveMode=false"},
-                    projectDirectory, new PrintStream(new NullOutputStream()), new PrintStream(new BufferedOutputStream(out))),
+            List<String> options = Stream.concat(Stream.of("archetype:generate"),
+                    parameters.entrySet().stream().map(entry -> "-D%s=%s"
+                            .formatted(entry.getKey(), entry.getValue()))).toList();
+            log.debug("Options: {}", options);
+            return new ReturnValue(cli.doMain(options.toArray(String[]::new),
+                    projectDirectory, new PrintStream(new NullOutputStream()),
+                    new PrintStream(new BufferedOutputStream(out))),
                     out.toString());
         } finally {
             try (var paths = Files.walk(temporaryPath)) {
@@ -58,7 +73,9 @@ public class ArchetypeGenerator {
 
     private Path getTemporaryPath() throws IOException {
         Path path =  Files.createTempDirectory("starter-generator-project-");
-        path.resolve(".mvn").toFile().mkdirs();
+        if (!path.resolve(".mvn").toFile().mkdirs()) {
+            throw new IOException("Unable to create directory");
+        }
         log.debug("Created temporary project directory: {}", path);
         return path;
     }
