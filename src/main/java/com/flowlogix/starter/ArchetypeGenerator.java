@@ -18,6 +18,7 @@
  */
 package com.flowlogix.starter;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -38,6 +39,7 @@ import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 @Slf4j
+@ApplicationScoped
 public class ArchetypeGenerator {
     public record ReturnValue(int status, String output, byte[] zipBytes) { }
 

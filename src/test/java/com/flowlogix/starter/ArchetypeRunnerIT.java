@@ -18,11 +18,6 @@
  */
 package com.flowlogix.starter;
 
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -49,19 +44,5 @@ class ArchetypeRunnerIT {
         Files.copy(new BufferedInputStream(new ByteArrayInputStream(zipBytes)),
                 java.nio.file.Path.of(zipFilePath),
                 StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    @GET
-    @Path("/download")
-    @Produces("application/octet-stream")
-    public Response downloadFile(String fileName, byte[] fileContent) {
-        StreamingOutput stream = output -> {
-            output.write(fileContent);
-            output.flush();
-        };
-
-        return Response.ok(stream)
-                .header("Content-Disposition", "attachment; filename=\"%s\"".formatted(fileName))
-                .build();
     }
 }
