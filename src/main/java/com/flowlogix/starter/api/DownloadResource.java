@@ -39,7 +39,7 @@ import java.io.PipedOutputStream;
 
 @Path("/")
 @Slf4j
-public class StarterResource {
+public class DownloadResource {
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final int BUFFER_SIZE = 4096;
 
