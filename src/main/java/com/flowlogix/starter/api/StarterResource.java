@@ -66,6 +66,7 @@ public class StarterResource {
         });
 
         if (result.status() != 0) {
+            result.close();
             return Response.serverError().type(MediaType.TEXT_PLAIN)
                     .entity(result.output()).build();
         }
