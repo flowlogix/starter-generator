@@ -19,22 +19,15 @@
 package com.flowlogix.starter;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import lombok.Locked;
+import jakarta.inject.Inject;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.maven.cli.CliRequest;
-import org.apache.maven.cli.MavenCli;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -43,28 +36,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Stream;
+import static com.flowlogix.util.Streams.readString;
 import static java.util.function.Predicate.not;
 
 @Slf4j
 @ApplicationScoped
 public class ArchetypeGenerator {
-    private static final VarHandle MULTI_MODULE_HANDLE;
-
-    static class ArchetypeInitializationException extends RuntimeException {
-        ArchetypeInitializationException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
-
-    static {
-        try {
-            MULTI_MODULE_HANDLE = MethodHandles.privateLookupIn(CliRequest.class, MethodHandles.lookup())
-                    .findVarHandle(CliRequest.class, "multiModuleProjectDirectory", File.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ArchetypeInitializationException("Unable to set CliRequest.multiModuleProjectDirectory", e);
-        }
-    }
+    private final Semaphore semaphore;
 
     public record Parameter(@NonNull String key, String value) { }
     public record ReturnValue(Path temporaryPath, int status, String output) implements AutoCloseable {
@@ -75,27 +55,32 @@ public class ArchetypeGenerator {
         }
     }
 
-    @SneakyThrows(IOException.class)
-    @Locked
+    public ArchetypeGenerator() {
+        this(1);
+    }
+
+    @Inject
+    public ArchetypeGenerator(@ConfigProperty(name = "com.flowlogix.starter.generator-threads", defaultValue = "4")
+                              int generatorThreads) {
+        log.debug("Generator threads: {}", generatorThreads);
+        semaphore = new Semaphore(generatorThreads);
+    }
+
+    @SneakyThrows({IOException.class, InterruptedException.class})
     public ReturnValue generateArchetype(Parameter[] inputParameters) {
-        Path temporaryPath = getTemporaryPath();
-        try (var out = new ByteArrayOutputStream()) {
+        log.debug("Available Permits: {}", semaphore.availablePermits());
+        semaphore.acquire();
+        try {
+            Path temporaryPath = getTemporaryPath();
             String projectDirectory = temporaryPath.toString();
-            MavenCli cli = new MavenCli() {
-                @Override
-                public int doMain(CliRequest request) {
-                    MULTI_MODULE_HANDLE.set(request, new File(projectDirectory));
-                    return super.doMain(request);
-                }
-            };
-            List<String> options = Stream.concat(Stream.of("archetype:generate"),
-                    extractParameters(inputParameters).entrySet().stream().map(entry -> "-D%s=%s"
+            List<String> options = Stream.concat(Stream.of("mvn", "archetype:generate"),
+                    extractParameters(inputParameters, projectDirectory).entrySet().stream().map(entry -> "-D%s=%s"
                             .formatted(entry.getKey(), entry.getValue()))).toList();
             log.debug("Options: {}", options);
-            int statusCode = cli.doMain(options.toArray(String[]::new),
-                    projectDirectory, new PrintStream(new NullOutputStream()),
-                    new PrintStream(new BufferedOutputStream(out)));
-            return new ReturnValue(temporaryPath, statusCode, out.toString());
+            Process mavenProcess = new ProcessBuilder().command(options).directory(temporaryPath.toFile()).start();
+            return new ReturnValue(temporaryPath, mavenProcess.waitFor(), readString(mavenProcess.getInputStream()));
+        } finally {
+            semaphore.release();
         }
     }
 
@@ -118,7 +103,7 @@ public class ArchetypeGenerator {
         }
     }
 
-    private static Map<String, String> extractParameters(Parameter[] inputParameters) {
+    private static Map<String, String> extractParameters(Parameter[] inputParameters, String projectDirectory) {
         Map<String, String> parameters = new LinkedHashMap<>();
         if (inputParameters != null) {
             for (Parameter parameter : inputParameters) {
@@ -131,6 +116,8 @@ public class ArchetypeGenerator {
         parameters.putIfAbsent("archetypeArtifactId", "starter");
         parameters.putIfAbsent("archetypeVersion", "LATEST");
         parameters.putIfAbsent("interactiveMode", "false");
+        parameters.putIfAbsent("maven.multiModuleProjectDirectory", projectDirectory);
+        parameters.putIfAbsent("outputDirectory", projectDirectory);
 
         parameters.putIfAbsent("groupId", "com.example");
         parameters.putIfAbsent("artifactId", "starter");
