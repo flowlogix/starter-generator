@@ -52,12 +52,14 @@ public class StarterResource {
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
     public Response downloadFile(@MatrixParam("group") @DefaultValue("com.example") String groupId,
                                  @MatrixParam("artifact") @DefaultValue("starter") String artifactId,
+                                 @MatrixParam("projectName") String projectName,
                                  @MatrixParam("package") String packageName,
                                  @MatrixParam("baseType") @DefaultValue("infra") String baseType,
                                  @MatrixParam("version") @DefaultValue("1.x-SNAPSHOT") String version) {
         ReturnValue result = generator.generateArchetype(new Parameter[] {
                 new Parameter("groupId", groupId),
                 new Parameter("artifactId", artifactId),
+                new Parameter("projectName", projectName),
                 new Parameter("package", packageName),
                 new Parameter("baseType", baseType),
                 new Parameter("version", version)

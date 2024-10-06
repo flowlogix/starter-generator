@@ -134,6 +134,7 @@ public class ArchetypeGenerator {
 
         parameters.putIfAbsent("groupId", "com.example");
         parameters.putIfAbsent("artifactId", "starter");
+        parameters.putIfAbsent("projectName", "Starter Project");
         parameters.putIfAbsent("package", "%s.%s".formatted(parameters.get("groupId"), parameters.get("artifactId")));
         parameters.putIfAbsent("version", "1.x-SNAPSHOT");
         parameters.putIfAbsent("baseType", "payara");
