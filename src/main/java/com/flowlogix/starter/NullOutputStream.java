@@ -19,21 +19,20 @@
 package com.flowlogix.starter;
 
 import java.io.OutputStream;
-import java.io.IOException;
 
 class NullOutputStream extends OutputStream {
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) {
         // Do nothing
     }
 
     @Override
-    public void write(byte[] b) throws IOException {
+    public void write(byte[] b) {
         // Do nothing
     }
 
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) {
         // Do nothing
     }
 }

@@ -34,22 +34,21 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
-import java.util.concurrent.ExecutionException;
 
 @Path("/")
 @Slf4j
 public class StarterResource {
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final int BUFFER_SIZE = 4096;
+
     @Inject
     ArchetypeGenerator generator;
     @Resource
     ManagedExecutorService executorService;
 
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private final int bufferSize = 4096;
-
     @GET
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
-    public Response downloadFile() throws ExecutionException, InterruptedException, IOException {
+    public Response downloadFile() {
         ReturnValue result = generator.generateArchetype(new Parameter[]{
                 new Parameter("package", "com.flowlogix.starter")});
         if (result.status() != 0) {
@@ -57,22 +56,26 @@ public class StarterResource {
                     .entity(result.output()).build();
         }
 
-        var output = new PipedOutputStream();
-        var input = new PipedInputStream(output, bufferSize);
-        generator.zipToStream(result, output, executorService);
 
         StreamingOutput stream = outputStream -> {
-            while (true) {
-                byte[] readBytes = input.readNBytes(bufferSize);
-                if (readBytes.length == 0) {
-                    break;
+            try (var output = new PipedOutputStream();
+                 var input = new PipedInputStream(output, BUFFER_SIZE)) {
+                generator.zipToStream(result, output, executorService);
+                while (true) {
+                    byte[] readBytes = input.readNBytes(BUFFER_SIZE);
+                    if (readBytes.length == 0) {
+                        break;
+                    }
+                    log.debug("Writing {} bytes to output stream", readBytes.length);
+                    outputStream.write(readBytes);
+                    outputStream.flush();
                 }
-                log.debug("Writing {} bytes to output stream", readBytes.length);
-                outputStream.write(readBytes);
-                outputStream.flush();
+            } catch (IOException e) {
+                log.debug("Failed to stream zip file.", e);
+            } finally {
+                log.debug("Cleanup");
+                result.close();
             }
-            log.debug("Cleanup");
-            result.close();
         };
 
         return Response.ok(stream)

@@ -38,7 +38,7 @@ class ArchetypeRunnerIT {
         Path temporaryPath;
         var archetypeGenerator = new ArchetypeGenerator();
         try (var executor = Executors.newSingleThreadExecutor();
-             ReturnValue result = archetypeGenerator.generateArchetype(new Parameter[]{
+             ReturnValue result = archetypeGenerator.generateArchetype(new Parameter[] {
                      new Parameter("package", "com.example.starter")})) {
             archetypeGenerator.zipToStream(result, new BufferedOutputStream(
                     new FileOutputStream(path.toFile())), executor).get();

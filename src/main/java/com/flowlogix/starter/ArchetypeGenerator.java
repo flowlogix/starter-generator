@@ -19,16 +19,21 @@
 package com.flowlogix.starter;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import lombok.Locked;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.maven.cli.CliRequest;
 import org.apache.maven.cli.MavenCli;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -43,6 +48,23 @@ import static java.util.function.Predicate.not;
 @Slf4j
 @ApplicationScoped
 public class ArchetypeGenerator {
+    private static final VarHandle MULTI_MODULE_HANDLE;
+
+    static class ArchetypeInitializationException extends RuntimeException {
+        ArchetypeInitializationException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    static {
+        try {
+            MULTI_MODULE_HANDLE = MethodHandles.privateLookupIn(CliRequest.class, MethodHandles.lookup())
+                    .findVarHandle(CliRequest.class, "multiModuleProjectDirectory", File.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ArchetypeInitializationException("Unable to set CliRequest.multiModuleProjectDirectory", e);
+        }
+    }
+
     public record Parameter(String key, String value) { }
     public record ReturnValue(Path temporaryPath, int status, String output) implements AutoCloseable {
         @Override
@@ -53,12 +75,18 @@ public class ArchetypeGenerator {
     }
 
     @SneakyThrows(IOException.class)
+    @Locked
     public ReturnValue generateArchetype(Parameter[] inputParameters) {
-        MavenCli cli = new MavenCli();
         Path temporaryPath = getTemporaryPath();
         try (var out = new ByteArrayOutputStream()) {
             String projectDirectory = temporaryPath.toString();
-            System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
+            MavenCli cli = new MavenCli() {
+                @Override
+                public int doMain(CliRequest request) {
+                    MULTI_MODULE_HANDLE.set(request, new File(projectDirectory));
+                    return super.doMain(request);
+                }
+            };
             List<String> options = Stream.concat(Stream.of("archetype:generate"),
                     extractParameters(inputParameters).entrySet().stream().map(entry -> "-D%s=%s"
                             .formatted(entry.getKey(), entry.getValue()))).toList();
@@ -83,11 +111,10 @@ public class ArchetypeGenerator {
         return returnValue;
     }
 
-    private static ReturnValue cleanup(ReturnValue returnValue) throws IOException {
+    private static void cleanup(ReturnValue returnValue) throws IOException {
         try (var paths = Files.walk(returnValue.temporaryPath)) {
             paths.sorted(Comparator.reverseOrder()).forEach(ArchetypeGenerator::deleteFile);
         }
-        return returnValue;
     }
 
     private static Map<String, String> extractParameters(Parameter[] inputParameters) {
