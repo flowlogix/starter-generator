@@ -54,8 +54,8 @@ public class StarterResource {
                                  @MatrixParam("artifact") @DefaultValue("starter") String artifactId,
                                  @MatrixParam("projectName") String projectName,
                                  @MatrixParam("package") String packageName,
-                                 @MatrixParam("baseType") @DefaultValue("infra") String baseType,
-                                 @MatrixParam("version") @DefaultValue("1.x-SNAPSHOT") String version) {
+                                 @MatrixParam("baseType") String baseType,
+                                 @MatrixParam("version") String version) {
         ReturnValue result = generator.generateArchetype(new Parameter[] {
                 new Parameter("groupId", groupId),
                 new Parameter("artifactId", artifactId),
