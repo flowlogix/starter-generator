@@ -35,48 +35,79 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import static java.util.function.Predicate.not;
 
 @Slf4j
 @ApplicationScoped
 public class ArchetypeGenerator {
-    public record ReturnValue(int status, String output, byte[] zipBytes) { }
+    public record Parameter(String key, String value) { }
+    public record ReturnValue(Path temporaryPath, int status, String output) implements AutoCloseable {
+        @Override
+        @SneakyThrows(IOException.class)
+        public void close() {
+            cleanup(this);
+        }
+    }
 
     @SneakyThrows(IOException.class)
-    public ReturnValue generate() {
-        Map<String, String> parameters = new LinkedHashMap<>();
-        parameters.put("archetypeGroupId", "com.flowlogix.archetypes");
-        parameters.put("archetypeArtifactId", "starter");
-        parameters.put("archetypeVersion", "LATEST");
-        parameters.put("interactiveMode", "false");
-
-        parameters.put("groupId", "com.example");
-        parameters.put("artifactId", "starter");
-        parameters.put("package", "com.example");
-        parameters.put("version", "1.x-SNAPSHOT");
-        parameters.put("baseType", "payara");
-
+    public ReturnValue generateArchetype(Parameter[] inputParameters) {
         MavenCli cli = new MavenCli();
         Path temporaryPath = getTemporaryPath();
-        try (var out = new ByteArrayOutputStream();
-             var zipFileStream = new ByteArrayOutputStream()) {
+        try (var out = new ByteArrayOutputStream()) {
             String projectDirectory = temporaryPath.toString();
             System.setProperty(MavenCli.MULTIMODULE_PROJECT_DIRECTORY, projectDirectory);
             List<String> options = Stream.concat(Stream.of("archetype:generate"),
-                    parameters.entrySet().stream().map(entry -> "-D%s=%s"
+                    extractParameters(inputParameters).entrySet().stream().map(entry -> "-D%s=%s"
                             .formatted(entry.getKey(), entry.getValue()))).toList();
             log.debug("Options: {}", options);
             int statusCode = cli.doMain(options.toArray(String[]::new),
                     projectDirectory, new PrintStream(new NullOutputStream()),
                     new PrintStream(new BufferedOutputStream(out)));
-            createZipFileStream(temporaryPath, new BufferedOutputStream(zipFileStream));
-            return new ReturnValue(statusCode, out.toString(), zipFileStream.toByteArray());
-        } finally {
-            try (var paths = Files.walk(temporaryPath)) {
-                paths.sorted(Comparator.reverseOrder()).forEach(ArchetypeGenerator::deleteFile);
+            return new ReturnValue(temporaryPath, statusCode, out.toString());
+        }
+    }
+
+    public Future<ReturnValue> zipToStream(ReturnValue returnValue, OutputStream zipFileStream,
+                                           ExecutorService executorService) {
+        return executorService.submit(() -> zipToStream(returnValue, zipFileStream));
+    }
+
+    @SneakyThrows(IOException.class)
+    private static ReturnValue zipToStream(ReturnValue returnValue, OutputStream zipFileStream) {
+        if (returnValue.status == 0) {
+            createZipFile(returnValue.temporaryPath, zipFileStream);
+        }
+        return returnValue;
+    }
+
+    private static ReturnValue cleanup(ReturnValue returnValue) throws IOException {
+        try (var paths = Files.walk(returnValue.temporaryPath)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(ArchetypeGenerator::deleteFile);
+        }
+        return returnValue;
+    }
+
+    private static Map<String, String> extractParameters(Parameter[] inputParameters) {
+        Map<String, String> parameters = new LinkedHashMap<>();
+        if (inputParameters != null) {
+            for (Parameter parameter : inputParameters) {
+                parameters.put(parameter.key(), parameter.value());
             }
         }
+        parameters.putIfAbsent("archetypeGroupId", "com.flowlogix.archetypes");
+        parameters.putIfAbsent("archetypeArtifactId", "starter");
+        parameters.putIfAbsent("archetypeVersion", "LATEST");
+        parameters.putIfAbsent("interactiveMode", "false");
+
+        parameters.putIfAbsent("groupId", "com.example");
+        parameters.putIfAbsent("artifactId", "starter");
+        parameters.putIfAbsent("package", parameters.get("groupId"));
+        parameters.putIfAbsent("version", "1.x-SNAPSHOT");
+        parameters.putIfAbsent("baseType", "payara");
+        return parameters;
     }
 
     private Path getTemporaryPath() throws IOException {
@@ -93,7 +124,7 @@ public class ArchetypeGenerator {
         Files.delete(path);
     }
 
-    private void createZipFileStream(Path sourceDirPath, OutputStream outputStream) throws IOException {
+    private static void createZipFile(Path sourceDirPath, OutputStream outputStream) throws IOException {
         try (var zipOutputStream = new ZipArchiveOutputStream(outputStream);
              var sourceDirPaths = Files.walk(sourceDirPath)) {
             sourceDirPaths.filter(not(Files::isDirectory))

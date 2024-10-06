@@ -19,7 +19,10 @@
 package com.flowlogix.starter.api;
 
 import com.flowlogix.starter.ArchetypeGenerator;
+import com.flowlogix.starter.ArchetypeGenerator.Parameter;
 import com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -27,25 +30,49 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.util.concurrent.ExecutionException;
 
 @Path("/")
+@Slf4j
 public class StarterResource {
     @Inject
     ArchetypeGenerator generator;
+    @Resource
+    ManagedExecutorService executorService;
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private final int bufferSize = 4096;
 
     @GET
-    @Produces({MediaType.APPLICATION_OCTET_STREAM,
-            MediaType.TEXT_PLAIN})
-    public Response downloadFile() {
-        ReturnValue returnValue = generator.generate();
-        if (returnValue.status() != 0) {
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
+    public Response downloadFile() throws ExecutionException, InterruptedException, IOException {
+        ReturnValue result = generator.generateArchetype(new Parameter[]{
+                new Parameter("package", "com.flowlogix.starter")});
+        if (result.status() != 0) {
             return Response.serverError().type(MediaType.TEXT_PLAIN)
-                    .entity(returnValue.output()).build();
+                    .entity(result.output()).build();
         }
 
-        StreamingOutput stream = output -> {
-            output.write(returnValue.zipBytes());
-            output.flush();
+        var output = new PipedOutputStream();
+        var input = new PipedInputStream(output, bufferSize);
+        generator.zipToStream(result, output, executorService);
+
+        StreamingOutput stream = outputStream -> {
+            while (true) {
+                byte[] readBytes = input.readNBytes(bufferSize);
+                if (readBytes.length == 0) {
+                    break;
+                }
+                log.debug("Writing {} bytes to output stream", readBytes.length);
+                outputStream.write(readBytes);
+                outputStream.flush();
+            }
+            log.debug("Cleanup");
+            result.close();
         };
 
         return Response.ok(stream)

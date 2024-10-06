@@ -18,31 +18,36 @@
  */
 package com.flowlogix.starter;
 
-import lombok.SneakyThrows;
+import com.flowlogix.starter.ArchetypeGenerator.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.Path;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 class ArchetypeRunnerIT {
     @Test
-    void generateArchetype() {
-        ReturnValue result = new ArchetypeGenerator().generate();
-        assertThat(result.status()).withFailMessage(result.output()).isZero();
-        log.debug("Generated project: {}", result.output());
-        createZipFileFromOutputStream(result.zipBytes(), "target/starter.zip");
-    }
-
-    @SneakyThrows(IOException.class)
-    static void createZipFileFromOutputStream(byte[] zipBytes, String zipFilePath) {
-        Files.copy(new BufferedInputStream(new ByteArrayInputStream(zipBytes)),
-                java.nio.file.Path.of(zipFilePath),
-                StandardCopyOption.REPLACE_EXISTING);
+    void generateArchetype() throws IOException, ExecutionException, InterruptedException {
+        var path = Path.of("target/starter.zip");
+        Path temporaryPath;
+        var archetypeGenerator = new ArchetypeGenerator();
+        try (var executor = Executors.newSingleThreadExecutor();
+             ReturnValue result = archetypeGenerator.generateArchetype(new Parameter[]{
+                     new Parameter("package", "com.example.starter")})) {
+            archetypeGenerator.zipToStream(result, new BufferedOutputStream(
+                    new FileOutputStream(path.toFile())), executor).get();
+            assertThat(result.status()).withFailMessage(result.output()).isZero();
+            assertThat(path).isNotEmptyFile();
+            temporaryPath = result.temporaryPath();
+            log.debug("Generated project: {}", result.output());
+            assertThat(temporaryPath).isNotEmptyDirectory();
+        }
+        assertThat(temporaryPath).doesNotExist();
     }
 }

@@ -50,6 +50,11 @@
             <artifactId>omnifaces</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.primefaces</groupId>
+            <artifactId>primefaces</artifactId>
+            <classifier>jakarta</classifier>
+        </dependency>
+        <dependency>
             <groupId>com.flowlogix.depchain</groupId>
             <artifactId>unit-test</artifactId>
             <version>${flowlogix.depchain.version}</version>
