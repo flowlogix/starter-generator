@@ -20,6 +20,7 @@ package com.flowlogix.starter;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import lombok.Locked;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -65,7 +66,7 @@ public class ArchetypeGenerator {
         }
     }
 
-    public record Parameter(String key, String value) { }
+    public record Parameter(@NonNull String key, String value) { }
     public record ReturnValue(Path temporaryPath, int status, String output) implements AutoCloseable {
         @Override
         @SneakyThrows(IOException.class)
@@ -121,7 +122,9 @@ public class ArchetypeGenerator {
         Map<String, String> parameters = new LinkedHashMap<>();
         if (inputParameters != null) {
             for (Parameter parameter : inputParameters) {
-                parameters.put(parameter.key(), parameter.value());
+                if (parameter.value() != null) {
+                    parameters.put(parameter.key(), parameter.value());
+                }
             }
         }
         parameters.putIfAbsent("archetypeGroupId", "com.flowlogix.archetypes");
@@ -131,7 +134,7 @@ public class ArchetypeGenerator {
 
         parameters.putIfAbsent("groupId", "com.example");
         parameters.putIfAbsent("artifactId", "starter");
-        parameters.putIfAbsent("package", parameters.get("groupId"));
+        parameters.putIfAbsent("package", "%s.%s".formatted(parameters.get("groupId"), parameters.get("artifactId")));
         parameters.putIfAbsent("version", "1.x-SNAPSHOT");
         parameters.putIfAbsent("baseType", "payara");
         return parameters;

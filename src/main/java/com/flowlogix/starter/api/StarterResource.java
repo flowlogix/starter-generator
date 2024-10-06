@@ -24,7 +24,9 @@ import com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.concurrent.ManagedExecutorService;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.MatrixParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
@@ -48,14 +50,23 @@ public class StarterResource {
 
     @GET
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
-    public Response downloadFile() {
-        ReturnValue result = generator.generateArchetype(new Parameter[]{
-                new Parameter("package", "com.flowlogix.starter")});
+    public Response downloadFile(@MatrixParam("group") @DefaultValue("com.example") String groupId,
+                                 @MatrixParam("artifact") @DefaultValue("starter") String artifactId,
+                                 @MatrixParam("package") String packageName,
+                                 @MatrixParam("baseType") @DefaultValue("infra") String baseType,
+                                 @MatrixParam("version") @DefaultValue("1.x-SNAPSHOT") String version) {
+        ReturnValue result = generator.generateArchetype(new Parameter[] {
+                new Parameter("groupId", groupId),
+                new Parameter("artifactId", artifactId),
+                new Parameter("package", packageName),
+                new Parameter("baseType", baseType),
+                new Parameter("version", version)
+        });
+
         if (result.status() != 0) {
             return Response.serverError().type(MediaType.TEXT_PLAIN)
                     .entity(result.output()).build();
         }
-
 
         StreamingOutput stream = outputStream -> {
             try (var output = new PipedOutputStream();
@@ -79,7 +90,7 @@ public class StarterResource {
         };
 
         return Response.ok(stream)
-                .header("Content-Disposition", "attachment; filename=\"%s\"".formatted("starter.zip"))
+                .header("Content-Disposition", "attachment; filename=\"%s.zip\"".formatted(artifactId))
                 .build();
     }
 }
