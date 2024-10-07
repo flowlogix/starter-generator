@@ -33,16 +33,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 
 @Path("/")
 @Slf4j
 public class DownloadResource {
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static final int BUFFER_SIZE = 4096;
-
     @Inject
     ArchetypeGenerator generator;
     @Resource
@@ -71,27 +65,7 @@ public class DownloadResource {
                     .entity(result.output()).build();
         }
 
-        StreamingOutput stream = outputStream -> {
-            try (var output = new PipedOutputStream();
-                 var input = new PipedInputStream(output, BUFFER_SIZE)) {
-                generator.zipToStream(result, output, executorService);
-                while (true) {
-                    byte[] readBytes = input.readNBytes(BUFFER_SIZE);
-                    if (readBytes.length == 0) {
-                        break;
-                    }
-                    log.debug("Writing {} bytes to output stream", readBytes.length);
-                    outputStream.write(readBytes);
-                    outputStream.flush();
-                }
-            } catch (IOException e) {
-                log.debug("Failed to stream zip file.", e);
-            } finally {
-                log.debug("Cleanup");
-                result.close();
-            }
-        };
-
+        StreamingOutput stream = outputStream -> generator.createZipStream(result, outputStream, executorService);
         return Response.ok(stream)
                 .header("Content-Disposition", "attachment; filename=\"%s.zip\"".formatted(artifactId))
                 .build();

@@ -26,8 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.omnifaces.util.Faces;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -44,6 +48,8 @@ import static java.util.function.Predicate.not;
 @Slf4j
 @ApplicationScoped
 public class ArchetypeGenerator {
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final int BUFFER_SIZE = 4096;
     private final Semaphore semaphore;
 
     public record Parameter(@NonNull String key, String value) { }
@@ -90,6 +96,52 @@ public class ArchetypeGenerator {
     }
 
     @SneakyThrows(IOException.class)
+    public void createZipStream(ReturnValue result, OutputStream outputStream, ExecutorService executorService) {
+        try (var output = new PipedOutputStream();
+             var input = new PipedInputStream(output, BUFFER_SIZE)) {
+            zipToStream(result, output, executorService);
+            writer(result, input, outputStream, false);
+        }
+    }
+
+    @SneakyThrows(IOException.class)
+    public InputStream createZipStream(ReturnValue result, ExecutorService executorService) {
+        var output = new PipedOutputStream();
+        zipToStream(result, output, executorService);
+        return new PipedInputStream(output, BUFFER_SIZE);
+    }
+
+    public void writer(ReturnValue result, InputStream inputStream, OutputStream outputStream, boolean closeStreams) {
+        try {
+            while (true) {
+                byte[] readBytes = inputStream.readNBytes(BUFFER_SIZE);
+                if (readBytes.length == 0) {
+                    break;
+                }
+                log.debug("Writing {} bytes to output stream", readBytes.length);
+                outputStream.write(readBytes);
+                outputStream.flush();
+            }
+        } catch (IOException e) {
+            log.debug("Failed to stream zip file.", e);
+            if (Faces.hasContext()) {
+                Faces.responseComplete();
+            }
+        } finally {
+            log.debug("Cleanup");
+            result.close();
+            if (closeStreams) {
+                try {
+                    inputStream.close();
+                    outputStream.close();
+                } catch (IOException e) {
+                    log.debug("Failed to close zip streams", e);
+                }
+            }
+        }
+    }
+
+    @SneakyThrows(IOException.class)
     private static ReturnValue zipToStream(ReturnValue returnValue, OutputStream zipFileStream) {
         if (returnValue.status == 0) {
             createZipFile(returnValue.temporaryPath, zipFileStream);
@@ -107,7 +159,7 @@ public class ArchetypeGenerator {
         Map<String, String> parameters = new LinkedHashMap<>();
         if (inputParameters != null) {
             for (Parameter parameter : inputParameters) {
-                if (parameter.value() != null) {
+                if (parameter.value() != null && !parameter.value().isBlank()) {
                     parameters.put(parameter.key(), parameter.value());
                 }
             }
