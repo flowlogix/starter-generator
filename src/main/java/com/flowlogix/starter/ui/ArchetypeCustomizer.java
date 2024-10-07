@@ -127,7 +127,7 @@ public class ArchetypeCustomizer implements Serializable {
             var httpUrl = URI.create(baseURL).toURL();
             if (!httpUrl.getProtocol().endsWith("s")) {
                 baseURL = new URI(httpUrl.getProtocol() + "s", null, httpUrl.getHost(),
-                        443, httpUrl.getPath(), null, null).toString();
+                        -1, httpUrl.getPath(), null, null).toString();
             }
         }
         return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
