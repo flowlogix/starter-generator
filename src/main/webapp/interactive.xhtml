@@ -3,7 +3,7 @@
       xmlns:h="jakarta.faces.html"
       xmlns:p="http://primefaces.org/ui">
 <h:head>
-    <title>Flow Logix Quick Start</title>
+    <title>Flow Logix Jakarta EE Quick Start</title>
     <script>
         //<![CDATA[
         function start() {
@@ -20,7 +20,10 @@
 
 <h:body>
     <div class="card">
-        <h1>Starter Generator for Flow Logix</h1>
+        <h1>Simple, Testable and feature-rich Starter Generator for Jakarta EE</h1>
+        <p/>
+            All below fields are optional. If you don't provide any value, default values will be used.
+            Click on the download button to download the customized Jakarta EE Quick Start.
         <p/>
         <p:dialog id="statusDialog" modal="true" widgetVar="statusDialog" header="Generating Project"
                   draggable="false" closable="false" resizable="false">
@@ -28,6 +31,11 @@
         </p:dialog>
 
         <h:form>
+            <p:commandButton value="Download" ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
+                             icon="pi pi-arrow-down" styleClass="mr-2">
+                <p:fileDownload value="#{archetype.download}"/>
+            </p:commandButton>
+
             <p:inputText id="artifact" value="#{archetype.artifact}" placeholder="Artifact Name"/>
             <p/>
             <p:inputText id="group" value="#{archetype.group}" placeholder="Group ID"/>
@@ -36,11 +44,13 @@
             <p/>
             <p:inputText id="packageName" value="#{archetype.packageName}" placeholder="Package Name"/>
             <p/>
-            <p:inputText id="baseType" value="#{archetype.baseType}" placeholder="payara or infra"/>
+            <p:inputText id="baseType" value="#{archetype.baseType}" placeholder="Base type (payara or infra)"/>
             <p/>
-            <p:inputText id="packagingType" value="#{archetype.packagingType}" placeholder="jar, war, ear"/>
+            <p:inputText id="packagingType" value="#{archetype.packagingType}" placeholder="Packaging (jar, war, ear)"/>
             <p/>
-            <p:inputText id="version" value="#{archetype.version}" placeholder="version"/>
+            <p:inputText id="version" value="#{archetype.version}" placeholder="Version"/>
+            <p/>
+            <p:inputText id="version" value="#{archetype.archetypeVersion}" placeholder="Archetype Version to use"/>
             <p/>
             <p:selectBooleanCheckbox id="useShiro" value="#{archetype.useShiro}" itemLabel="Enable Shiro"/>
             <p/>
@@ -48,6 +58,7 @@
             <p/>
             <p:selectBooleanCheckbox id="usePrimeFaces" value="#{archetype.usePrimeFaces}" itemLabel="Enable PrimeFaces"/>
             <p/>
+
             <p:commandButton value="Download" ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
                              icon="pi pi-arrow-down" styleClass="mr-2">
                 <p:fileDownload value="#{archetype.download}"/>

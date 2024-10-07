@@ -59,6 +59,7 @@ public class ArchetypeCustomizer implements Serializable {
     private String baseType;
     private String packagingType;
     private String version;
+    private String archetypeVersion;
 
     private boolean useShiro = true;
     private boolean useOmniFaces = true;
@@ -78,6 +79,7 @@ public class ArchetypeCustomizer implements Serializable {
                 new Parameter("baseType", baseType),
                 new Parameter("packagingType", packagingType),
                 new Parameter("version", version),
+                new Parameter("archetypeVersion", archetypeVersion),
                 new Parameter("useShiro", Boolean.toString(useShiro)),
                 new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
                 new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
