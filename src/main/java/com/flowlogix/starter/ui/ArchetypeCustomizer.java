@@ -45,8 +45,6 @@ import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 @Slf4j
 public class ArchetypeCustomizer implements Serializable {
     private static final long serialVersionUID = 1L;
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static final int BUFFER_SIZE = 4096;
 
     @Inject
     ArchetypeGenerator generator;
@@ -62,6 +60,8 @@ public class ArchetypeCustomizer implements Serializable {
     private String version;
 
     private boolean useShiro = true;
+    private boolean useOmniFaces = true;
+    private boolean usePrimeFaces = true;
 
     @PostConstruct
     void init() {
@@ -77,6 +77,8 @@ public class ArchetypeCustomizer implements Serializable {
                 new Parameter("baseType", baseType),
                 new Parameter("version", version),
                 new Parameter("useShiro", Boolean.toString(useShiro)),
+                new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
+                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces))
         });
 
         if (result.status() != 0) {

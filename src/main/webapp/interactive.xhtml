@@ -42,6 +42,10 @@
             <p/>
             <p:selectBooleanCheckbox id="useShiro" value="#{archetype.useShiro}" itemLabel="Enable Shiro"/>
             <p/>
+            <p:selectBooleanCheckbox id="useOmniFaces" value="#{archetype.useOmniFaces}" itemLabel="Enable OmniFaces"/>
+            <p/>
+            <p:selectBooleanCheckbox id="usePrimeFaces" value="#{archetype.usePrimeFaces}" itemLabel="Enable PrimeFaces"/>
+            <p/>
             <p:commandButton value="Download" ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
                              icon="pi pi-arrow-down" styleClass="mr-2">
                 <p:fileDownload value="#{archetype.download}"/>
