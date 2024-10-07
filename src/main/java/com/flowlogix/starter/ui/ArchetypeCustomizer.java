@@ -57,6 +57,7 @@ public class ArchetypeCustomizer implements Serializable {
     private String packageName;
     @Pattern(regexp = "infra|payara|", message = "Base type must be either 'infra' or 'payara'")
     private String baseType;
+    private String packagingType;
     private String version;
 
     private boolean useShiro = true;
@@ -75,10 +76,11 @@ public class ArchetypeCustomizer implements Serializable {
                 new Parameter("projectName", projectName),
                 new Parameter("package", packageName),
                 new Parameter("baseType", baseType),
+                new Parameter("packagingType", packagingType),
                 new Parameter("version", version),
                 new Parameter("useShiro", Boolean.toString(useShiro)),
                 new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
-                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces))
+                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
         });
 
         if (result.status() != 0) {
