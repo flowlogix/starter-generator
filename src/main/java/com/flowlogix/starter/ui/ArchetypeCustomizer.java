@@ -64,6 +64,7 @@ public class ArchetypeCustomizer implements Serializable {
     private boolean useShiro = true;
     private boolean useOmniFaces = true;
     private boolean usePrimeFaces = true;
+    private boolean useLazyModel = true;
 
     @PostConstruct
     void init() {
@@ -83,6 +84,7 @@ public class ArchetypeCustomizer implements Serializable {
                 new Parameter("useShiro", Boolean.toString(useShiro)),
                 new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
                 new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
+                new Parameter("useLazyModel", Boolean.toString(useLazyModel)),
         });
 
         if (result.status() != 0) {
