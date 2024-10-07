@@ -36,6 +36,9 @@ import org.primefaces.model.StreamedContent;
 import org.primefaces.util.Callbacks;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -111,16 +114,25 @@ public class ArchetypeCustomizer implements Serializable {
         };
     }
 
-    public String getCurlCommand() {
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public String getCurlCommand() throws MalformedURLException, URISyntaxException {
         String parameters = Arrays.asList(getParameters(true)).stream()
                 .filter(parameter -> parameter.value() != null && !parameter.value().isBlank())
                 .map(parameter -> "%s=%s".formatted(parameter.key(),
                         URLEncoder.encode(parameter.value(), StandardCharsets.UTF_8)
                                 .replace("+", "%20")))
                 .collect(Collectors.joining(";"));
+        var baseURL = Faces.getRequestBaseURL();
+        if (!Faces.isRequestSecure() && "https".equalsIgnoreCase(Faces.getRequestHeader("X-Forwarded-Proto"))) {
+            var httpUrl = URI.create(baseURL).toURL();
+            if (!httpUrl.getProtocol().endsWith("s")) {
+                baseURL = new URI(httpUrl.getProtocol() + "s", null, httpUrl.getHost(),
+                        443, httpUrl.getPath(), null, null).toString();
+            }
+        }
         return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
                 .formatted(artifact.isBlank() ? "starter" : artifact,
-                Faces.getRequestBaseURL(), parameters);
+                        baseURL, parameters);
     }
 
     public void resetSession() {
