@@ -114,7 +114,6 @@ public class ArchetypeCustomizer implements Serializable {
         };
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     public String getCurlCommand() throws MalformedURLException {
         String parameters = Arrays.asList(getParameters(true)).stream()
                 .filter(parameter -> parameter.value() != null && !parameter.value().isBlank())
@@ -128,6 +127,11 @@ public class ArchetypeCustomizer implements Serializable {
         return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
                 .formatted(artifact.isBlank() ? "starter" : artifact,
                         baseURL, parameters);
+    }
+
+    public String getMavenCommand() {
+        return String.join(" ", ArchetypeGenerator.generateMavenCommandLine(
+                getParameters(false), null));
     }
 
     public void resetSession() {

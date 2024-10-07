@@ -79,15 +79,20 @@ public class ArchetypeGenerator {
         try {
             Path temporaryPath = getTemporaryPath();
             String projectDirectory = temporaryPath.toString();
-            List<String> options = Stream.concat(Stream.of("mvn", "archetype:generate"),
-                    extractParameters(inputParameters, projectDirectory).entrySet().stream().map(entry -> "-D%s=%s"
-                            .formatted(entry.getKey(), entry.getValue()))).toList();
+            List<String> options = generateMavenCommandLine(inputParameters, projectDirectory);
             log.debug("Options: {}", options);
             Process mavenProcess = new ProcessBuilder().command(options).directory(temporaryPath.toFile()).start();
             return new ReturnValue(temporaryPath, mavenProcess.waitFor(), readString(mavenProcess.getInputStream()));
         } finally {
             semaphore.release();
         }
+    }
+
+    public static List<String> generateMavenCommandLine(Parameter[] inputParameters, String projectDirectory) {
+        return Stream.concat(Stream.of("mvn", "archetype:generate"),
+                extractParameters(inputParameters, projectDirectory).entrySet().stream()
+                        .map(entry -> (projectDirectory != null ? "-D%s=%s" : "-D%s=\"%s\"")
+                        .formatted(entry.getKey(), entry.getValue()))).toList();
     }
 
     public Future<ReturnValue> zipToStream(ReturnValue returnValue, OutputStream zipFileStream,
@@ -157,6 +162,21 @@ public class ArchetypeGenerator {
 
     private static Map<String, String> extractParameters(Parameter[] inputParameters, String projectDirectory) {
         Map<String, String> parameters = new LinkedHashMap<>();
+        parameters.put("archetypeGroupId", "com.flowlogix.archetypes");
+        parameters.put("archetypeArtifactId", "starter");
+        parameters.put("archetypeVersion", "LATEST");
+        parameters.put("interactiveMode", "false");
+        if (projectDirectory != null) {
+            parameters.put("maven.multiModuleProjectDirectory", projectDirectory);
+            parameters.put("outputDirectory", projectDirectory);
+        }
+        parameters.put("groupId", "com.example");
+        parameters.put("artifactId", "starter");
+        parameters.put("projectName", "Starter Project");
+        parameters.put("package", "%s.%s".formatted(parameters.get("groupId"), parameters.get("artifactId")));
+        parameters.put("version", "1.x-SNAPSHOT");
+        parameters.put("baseType", "payara");
+
         if (inputParameters != null) {
             for (Parameter parameter : inputParameters) {
                 if (parameter.value() != null && !parameter.value().isBlank()) {
@@ -164,19 +184,6 @@ public class ArchetypeGenerator {
                 }
             }
         }
-        parameters.putIfAbsent("archetypeGroupId", "com.flowlogix.archetypes");
-        parameters.putIfAbsent("archetypeArtifactId", "starter");
-        parameters.putIfAbsent("archetypeVersion", "LATEST");
-        parameters.putIfAbsent("interactiveMode", "false");
-        parameters.putIfAbsent("maven.multiModuleProjectDirectory", projectDirectory);
-        parameters.putIfAbsent("outputDirectory", projectDirectory);
-
-        parameters.putIfAbsent("groupId", "com.example");
-        parameters.putIfAbsent("artifactId", "starter");
-        parameters.putIfAbsent("projectName", "Starter Project");
-        parameters.putIfAbsent("package", "%s.%s".formatted(parameters.get("groupId"), parameters.get("artifactId")));
-        parameters.putIfAbsent("version", "1.x-SNAPSHOT");
-        parameters.putIfAbsent("baseType", "payara");
         return parameters;
     }
 

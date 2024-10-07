@@ -83,7 +83,8 @@
                 <p:fileDownload value="#{archetype.download}"/>
             </p:commandButton>
             <p/>
-            <p:commandButton value="Update curl command" update="curlCommand"
+            <hr/>
+            <p:commandButton value="Update commands" update="curlCommand, mavenCommand"
                              icon="pi pi-arrow-down" styleClass="mr-2"/>
             <p/>
             <span id="curlContent">
@@ -92,6 +93,13 @@
             <button class="ui-button ui-widget ui-corner-all ui-button-text-icon-left mr-2"
                     onclick="copyToClipboard('curlContent', 'curlContentCopyFeedback'); return false">Copy</button>
             <span id="curlContentCopyFeedback"/>
+            <hr/>
+            <span id="mavenContent">
+                <p:outputLabel id="mavenCommand" value="#{archetype.mavenCommand}" escape="false"/>
+            </span>
+            <button class="ui-button ui-widget ui-corner-all ui-button-text-icon-left mr-2"
+                    onclick="copyToClipboard('mavenContent', 'mavenContentCopyFeedback'); return false">Copy</button>
+            <span id="mavenContentCopyFeedback"/>
         </h:form>
         <p/>
         <h:form>
