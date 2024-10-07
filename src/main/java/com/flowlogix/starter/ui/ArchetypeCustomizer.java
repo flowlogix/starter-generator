@@ -92,10 +92,6 @@ public class ArchetypeCustomizer implements Serializable {
                 .build();
     }
 
-    public String getProjectTitle() {
-        return projectName.isBlank() ? "Starter Project" : projectName;
-    }
-
     public void resetSession() {
         log.debug("Resetting session");
         Faces.invalidateSession();
