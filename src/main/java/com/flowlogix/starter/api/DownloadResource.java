@@ -44,19 +44,32 @@ public class DownloadResource {
 
     @GET
     @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.TEXT_PLAIN})
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public Response downloadFile(@MatrixParam("group") @DefaultValue("com.example") String groupId,
                                  @MatrixParam("artifact") @DefaultValue("starter") String artifactId,
                                  @MatrixParam("projectName") String projectName,
                                  @MatrixParam("package") String packageName,
                                  @MatrixParam("baseType") String baseType,
-                                 @MatrixParam("version") String version) {
+                                 @MatrixParam("packagingType") String packagingType,
+                                 @MatrixParam("version") String version,
+                                 @MatrixParam("archetypeVersion") String archetypeVersion,
+                                 @MatrixParam("useShiro") @DefaultValue("false") boolean useShiro,
+                                 @MatrixParam("useOmniFaces") @DefaultValue("false") boolean useOmniFaces,
+                                 @MatrixParam("usePrimeFaces") @DefaultValue("false") boolean usePrimeFaces,
+                                 @MatrixParam("useLazyModel") @DefaultValue("false") boolean useLazyModel) {
         ReturnValue result = generator.generateArchetype(new Parameter[] {
                 new Parameter("groupId", groupId),
                 new Parameter("artifactId", artifactId),
                 new Parameter("projectName", projectName),
                 new Parameter("package", packageName),
                 new Parameter("baseType", baseType),
-                new Parameter("version", version)
+                new Parameter("packagingType", packagingType),
+                new Parameter("version", version),
+                new Parameter("archetypeVersion", archetypeVersion),
+                new Parameter("useShiro", Boolean.toString(useShiro)),
+                new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
+                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
+                new Parameter("useLazyModel", Boolean.toString(useLazyModel)),
         });
 
         if (result.status() != 0) {

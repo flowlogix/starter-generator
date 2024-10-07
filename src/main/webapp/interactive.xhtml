@@ -14,6 +14,23 @@
             PF('statusDialog').hide();
             history.go(0);
         }
+
+        function copyToClipboard(contentId, feedbackId) {
+            const content = document.getElementById(contentId).innerText
+            navigator.clipboard.writeText(content).then(() => {
+                const feedback = document.getElementById(feedbackId);
+                feedback.innerText = 'Copied!';
+                setTimeout(() => {
+                    feedback.innerText = '';
+                }, 2000);
+            }).catch(err => {
+                feedback.innerText = 'Failed to copy: ' + err;
+                setTimeout(() => {
+                    feedback.innerText = '';
+                }, 2000);
+
+            });
+        }
         //]]>
     </script>
 </h:head>
@@ -65,6 +82,16 @@
                              icon="pi pi-arrow-down" styleClass="mr-2">
                 <p:fileDownload value="#{archetype.download}"/>
             </p:commandButton>
+            <p/>
+            <p:commandButton value="Update curl command" update="curlCommand"
+                             icon="pi pi-arrow-down" styleClass="mr-2"/>
+            <p/>
+            <span id="curlContent">
+                <p:outputLabel id="curlCommand" value="#{archetype.curlCommand}" escape="false"/>
+            </span>
+            <button class="ui-button ui-widget ui-corner-all ui-button-text-icon-left mr-2"
+                    onclick="copyToClipboard('curlContent', 'curlContentCopyFeedback'); return false">Copy</button>
+            <span id="curlContentCopyFeedback"/>
         </h:form>
         <p/>
         <h:form>

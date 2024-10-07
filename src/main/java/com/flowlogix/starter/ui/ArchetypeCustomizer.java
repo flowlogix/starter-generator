@@ -36,6 +36,10 @@ import org.primefaces.model.StreamedContent;
 import org.primefaces.util.Callbacks;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import static com.flowlogix.starter.ArchetypeGenerator.Parameter;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
 
@@ -69,24 +73,11 @@ public class ArchetypeCustomizer implements Serializable {
     @PostConstruct
     void init() {
         projectName = "";
+        artifact = "";
     }
 
     public StreamedContent getDownload() {
-        ReturnValue result = generator.generateArchetype(new Parameter[] {
-                new Parameter("groupId", group),
-                new Parameter("artifactId", artifact),
-                new Parameter("projectName", projectName),
-                new Parameter("package", packageName),
-                new Parameter("baseType", baseType),
-                new Parameter("packagingType", packagingType),
-                new Parameter("version", version),
-                new Parameter("archetypeVersion", archetypeVersion),
-                new Parameter("useShiro", Boolean.toString(useShiro)),
-                new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
-                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
-                new Parameter("useLazyModel", Boolean.toString(useLazyModel)),
-        });
-
+        ReturnValue result = generator.generateArchetype(getParameters(false));
         if (result.status() != 0) {
             result.close();
             return null;
@@ -101,6 +92,35 @@ public class ArchetypeCustomizer implements Serializable {
                 .stream(callback)
                 .writer(output -> generator.writer(result, input, output, true))
                 .build();
+    }
+
+    private Parameter[] getParameters(boolean forCurl) {
+        return new Parameter[] {
+                new Parameter(forCurl ? "group" : "groupId", group),
+                new Parameter(forCurl ? "artifact" : "artifactId", artifact),
+                new Parameter("projectName", projectName),
+                new Parameter("package", packageName),
+                new Parameter("baseType", baseType),
+                new Parameter("packagingType", packagingType),
+                new Parameter("version", version),
+                new Parameter("archetypeVersion", archetypeVersion),
+                new Parameter("useShiro", Boolean.toString(useShiro)),
+                new Parameter("useOmniFaces", Boolean.toString(useOmniFaces)),
+                new Parameter("usePrimeFaces", Boolean.toString(usePrimeFaces)),
+                new Parameter("useLazyModel", Boolean.toString(useLazyModel)),
+        };
+    }
+
+    public String getCurlCommand() {
+        String parameters = Arrays.asList(getParameters(true)).stream()
+                .filter(parameter -> parameter.value() != null && !parameter.value().isBlank())
+                .map(parameter -> "%s=%s".formatted(parameter.key(),
+                        URLEncoder.encode(parameter.value(), StandardCharsets.UTF_8)
+                                .replace("+", "%20")))
+                .collect(Collectors.joining(";"));
+        return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
+                .formatted(artifact.isBlank() ? "starter" : artifact,
+                Faces.getRequestBaseURL(), parameters);
     }
 
     public void resetSession() {
