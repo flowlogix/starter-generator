@@ -123,7 +123,10 @@ public class ArchetypeCustomizer implements Serializable {
                                 .replace("+", "%20")))
                 .collect(Collectors.joining(";"));
         var baseURL = Faces.getRequestBaseURL();
-        if (!Faces.isRequestSecure() && "https".equalsIgnoreCase(Faces.getRequestHeader("X-Forwarded-Proto"))) {
+        String proto = "X-Forwarded-Proto";
+        if (!Faces.isRequestSecure() &&
+                ("https".equalsIgnoreCase(Faces.getRequestHeader(proto)) ||
+                        "https".equalsIgnoreCase(Faces.getRequestHeader(proto.toLowerCase())))) {
             var httpUrl = URI.create(baseURL).toURL();
             if (!httpUrl.getProtocol().endsWith("s")) {
                 baseURL = new URI(httpUrl.getProtocol() + "s", null, httpUrl.getHost(),
