@@ -19,6 +19,7 @@
 package com.flowlogix.starter.ui;
 
 import com.flowlogix.starter.ArchetypeGenerator;
+import com.flowlogix.util.ShrinkWrapManipulator;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.concurrent.ManagedExecutorService;
@@ -38,7 +39,6 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -115,21 +115,16 @@ public class ArchetypeCustomizer implements Serializable {
     }
 
     @SuppressWarnings("checkstyle:MagicNumber")
-    public String getCurlCommand() throws MalformedURLException, URISyntaxException {
+    public String getCurlCommand() throws MalformedURLException {
         String parameters = Arrays.asList(getParameters(true)).stream()
                 .filter(parameter -> parameter.value() != null && !parameter.value().isBlank())
                 .map(parameter -> "%s=%s".formatted(parameter.key(),
                         URLEncoder.encode(parameter.value(), StandardCharsets.UTF_8)
                                 .replace("+", "%20")))
                 .collect(Collectors.joining(";"));
-        var baseURL = Faces.getRequestBaseURL();
-        if (Faces.isRequestSecure()) {
-            var httpUrl = URI.create(baseURL).toURL();
-            if (!httpUrl.getProtocol().endsWith("s")) {
-                baseURL = new URI(httpUrl.getProtocol() + "s", null, httpUrl.getHost(),
-                        -1, httpUrl.getPath(), null, null).toString();
-            }
-        }
+        var baseURL = Faces.isRequestSecure()
+                ? ShrinkWrapManipulator.toHttpsURL(URI.create(Faces.getRequestBaseURL()).toURL(),
+                "none", -1) : Faces.getRequestBaseURL();
         return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
                 .formatted(artifact.isBlank() ? "starter" : artifact,
                         baseURL, parameters);
