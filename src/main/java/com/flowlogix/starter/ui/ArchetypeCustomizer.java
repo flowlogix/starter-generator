@@ -61,6 +61,8 @@ public class ArchetypeCustomizer implements Serializable {
     private String baseType;
     private String version;
 
+    private boolean useShiro = true;
+
     @PostConstruct
     void init() {
         projectName = "";
@@ -74,6 +76,7 @@ public class ArchetypeCustomizer implements Serializable {
                 new Parameter("package", packageName),
                 new Parameter("baseType", baseType),
                 new Parameter("version", version),
+                new Parameter("useShiro", Boolean.toString(useShiro)),
         });
 
         if (result.status() != 0) {

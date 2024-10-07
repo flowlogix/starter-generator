@@ -3,7 +3,7 @@
       xmlns:h="jakarta.faces.html"
       xmlns:p="http://primefaces.org/ui">
 <h:head>
-    <title>FlowLogix Quick Start</title>
+    <title>Flow Logix Quick Start</title>
     <script>
         //<![CDATA[
         function start() {
@@ -20,7 +20,7 @@
 
 <h:body>
     <div class="card">
-        <h1>Starter Generator for FlowLogix</h1>
+        <h1>Starter Generator for Flow Logix</h1>
         <p/>
         <p:dialog id="statusDialog" modal="true" widgetVar="statusDialog" header="Generating Project"
                   draggable="false" closable="false" resizable="false">
@@ -39,6 +39,9 @@
             <p:inputText id="baseType" value="#{archetype.baseType}" placeholder="payara or infra"/>
             <p/>
             <p:inputText id="version" value="#{archetype.version}" placeholder="version"/>
+            <p/>
+            <p/>
+            <p:checkbox id="useShiro" value="#{archetype.useShiro}" label="Enable Shiro"/>
             <p/>
             <p:commandButton value="Download" ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
                              icon="pi pi-arrow-down" styleClass="mr-2">
