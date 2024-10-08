@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <flowlogix.depchain.version>37</flowlogix.depchain.version>
+        <flowlogix.depchain.version>38</flowlogix.depchain.version>
         <flowlogix.version>9.0.6</flowlogix.version>
         <checkstyle.supressionsLocation>${basedir}/src/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${basedir}/src/checkstyle/apache-header.txt</checkstyle.headerLocation>
