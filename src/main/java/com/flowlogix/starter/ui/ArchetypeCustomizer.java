@@ -20,7 +20,6 @@ package com.flowlogix.starter.ui;
 
 import com.flowlogix.starter.ArchetypeGenerator;
 import com.flowlogix.util.ShrinkWrapManipulator;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.concurrent.ManagedExecutorService;
 import jakarta.enterprise.context.SessionScoped;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import static com.flowlogix.starter.ArchetypeGenerator.Parameter;
 import static com.flowlogix.starter.ArchetypeGenerator.ReturnValue;
+import static jakarta.validation.constraints.Pattern.Flag;
 
 @Named("archetype")
 @SessionScoped
@@ -58,13 +58,14 @@ public class ArchetypeCustomizer implements Serializable {
     @Resource
     ManagedExecutorService executorService;
 
-    private String artifact;
-    private String group;
-    private String projectName;
-    private String packageName;
-    @Pattern(regexp = "\\s*infra\\s*|\\s*payara\\s*|\\s*", message = "Base type must be either 'infra' or 'payara'")
-    private String baseType;
-    private String packagingType;
+    private String artifact = "";
+    private String group = "";
+    private String projectName = "";
+    private String packageName = "";
+    @Pattern(regexp = "\\s*(infra|payara|)\\s*", flags = Flag.CASE_INSENSITIVE,
+            message = "Base type must be either 'infra' or 'payara'")
+    private String baseType = "";
+    private String packagingType = "";
     private String version;
     private String archetypeVersion;
 
@@ -72,12 +73,6 @@ public class ArchetypeCustomizer implements Serializable {
     private boolean useOmniFaces = true;
     private boolean usePrimeFaces = true;
     private boolean useLazyModel = true;
-
-    @PostConstruct
-    void init() {
-        projectName = "";
-        artifact = "";
-    }
 
     public StreamedContent getDownload() {
         ReturnValue result = generator.generateArchetype(getParameters(false));
@@ -99,12 +94,12 @@ public class ArchetypeCustomizer implements Serializable {
 
     private Parameter[] getParameters(boolean forCurl) {
         return new Parameter[] {
-                new Parameter(forCurl ? "group" : "groupId", group),
-                new Parameter(forCurl ? "artifact" : "artifactId", artifact),
+                new Parameter(forCurl ? "group" : "groupId", group.toLowerCase()),
+                new Parameter(forCurl ? "artifact" : "artifactId", artifact.toLowerCase()),
                 new Parameter("projectName", projectName),
-                new Parameter("package", packageName),
-                new Parameter("baseType", baseType),
-                new Parameter("packagingType", packagingType),
+                new Parameter("package", packageName.toLowerCase()),
+                new Parameter("baseType", baseType.toLowerCase()),
+                new Parameter("packagingType", packagingType.toLowerCase()),
                 new Parameter("version", version),
                 new Parameter("archetypeVersion", archetypeVersion),
                 new Parameter("useShiro", Boolean.toString(useShiro)),

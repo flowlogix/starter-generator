@@ -81,8 +81,13 @@ public class ArchetypeGenerator {
             String projectDirectory = temporaryPath.toString();
             List<String> options = generateMavenCommandLine(inputParameters, projectDirectory);
             log.debug("Options: {}", options);
-            Process mavenProcess = new ProcessBuilder().command(options).directory(temporaryPath.toFile()).start();
-            return new ReturnValue(temporaryPath, mavenProcess.waitFor(), readString(mavenProcess.getInputStream()));
+            try {
+                Process mavenProcess = new ProcessBuilder().command(options).directory(temporaryPath.toFile()).start();
+                return new ReturnValue(temporaryPath, mavenProcess.waitFor(), readString(mavenProcess.getInputStream()));
+            } catch (IOException e) {
+                log.debug("Failed to execute Maven process", e);
+                return new ReturnValue(temporaryPath, -1, e.getMessage());
+            }
         } finally {
             semaphore.release();
         }

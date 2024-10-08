@@ -79,13 +79,13 @@
             <p/>
 
             <p:commandButton value="Download" ajax="false" onclick="PrimeFaces.monitorDownload(start, stop);"
-                             icon="pi pi-arrow-down" styleClass="mr-2">
+                             validateClient="true" icon="pi pi-arrow-down" styleClass="mr-2">
                 <p:fileDownload value="#{archetype.download}"/>
             </p:commandButton>
             <p/>
             <hr/>
-            <p:commandButton value="Update commands" update="curlCommand, mavenCommand"
-                             icon="pi pi-arrow-down" styleClass="mr-2"/>
+            <p:commandButton value="Update commands" update="@form, curlCommand, mavenCommand"
+                             validateClient="true" icon="pi pi-arrow-down" styleClass="mr-2"/>
             <p/>
             <span id="curlContent">
                 <p:outputLabel id="curlCommand" value="#{archetype.curlCommand}" escape="false"/>
