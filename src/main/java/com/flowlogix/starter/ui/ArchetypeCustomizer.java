@@ -90,7 +90,7 @@ public class ArchetypeCustomizer implements Serializable {
         Callbacks.SerializableSupplier<InputStream> callback = () -> input;
 
         return DefaultStreamedContent.builder()
-                .name("%s.zip".formatted(artifact.isBlank() ? "starter" : artifact))
+                .name("%s.zip".formatted(artifact.isBlank() ? "starter" : artifact.trim()))
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .stream(callback)
                 .writer(output -> generator.writer(result, input, output, true))
