@@ -180,7 +180,7 @@ public class ArchetypeGenerator {
         if (inputParameters != null) {
             for (Parameter parameter : inputParameters) {
                 if (parameter.value() != null && !parameter.value().isBlank()) {
-                    parameters.put(parameter.key(), parameter.value());
+                    parameters.put(parameter.key(), parameter.value().trim());
                 }
             }
         }
