@@ -62,7 +62,7 @@ public class ArchetypeCustomizer implements Serializable {
     private String group;
     private String projectName;
     private String packageName;
-    @Pattern(regexp = "infra|payara|", message = "Base type must be either 'infra' or 'payara'")
+    @Pattern(regexp = "\\s*infra\\s*|\\s*payara\\s*|\\s*", message = "Base type must be either 'infra' or 'payara'")
     private String baseType;
     private String packagingType;
     private String version;
@@ -118,7 +118,7 @@ public class ArchetypeCustomizer implements Serializable {
         String parameters = Arrays.asList(getParameters(true)).stream()
                 .filter(parameter -> parameter.value() != null && !parameter.value().isBlank())
                 .map(parameter -> "%s=%s".formatted(parameter.key(),
-                        URLEncoder.encode(parameter.value(), StandardCharsets.UTF_8)
+                        URLEncoder.encode(parameter.value().trim(), StandardCharsets.UTF_8)
                                 .replace("+", "%20")))
                 .collect(Collectors.joining(";"));
         var baseURL = Faces.isRequestSecure()
