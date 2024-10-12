@@ -85,7 +85,7 @@ public class ArchetypeCustomizer implements Serializable {
         Callbacks.SerializableSupplier<InputStream> callback = () -> input;
 
         return DefaultStreamedContent.builder()
-                .name("%s.zip".formatted(artifact.isBlank() ? "starter" : artifact.trim()))
+                .name("%s.zip".formatted(artifact.isBlank() ? "starter" : artifact.toLowerCase().trim()))
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .stream(callback)
                 .writer(output -> generator.writer(result, input, output, true))
@@ -120,7 +120,7 @@ public class ArchetypeCustomizer implements Serializable {
                 ? ShrinkWrapManipulator.toHttpsURL(URI.create(Faces.getRequestBaseURL()).toURL())
                 : Faces.getRequestBaseURL();
         return "curl -X GET -H \"Accept: application/octet-stream\" -o %s.zip \"%sdownload/;%s\""
-                .formatted(artifact.isBlank() ? "starter" : artifact.trim(),
+                .formatted(artifact.isBlank() ? "starter" : artifact.toLowerCase().trim(),
                         baseURL, parameters);
     }
 
